@@ -117,6 +117,39 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <version>${findbugs.version}</version>
+        <executions>
+          <execution>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <effort>Max</effort>
+          <threshold>High</threshold>
+          <xmlOutput>true</xmlOutput>
+          <failOnError>true</failOnError>
+          <excludeFilterFile>findbugs-filter.xml</excludeFilterFile>
+          <skip>false</skip>
+          <plugins>
+            <plugin>
+              <groupId>com.mebigfatguy.fb-contrib</groupId>
+              <artifactId>fb-contrib</artifactId>
+              <version>${fb-contrib.version}</version>
+            </plugin>
+            <plugin>
+              <groupId>com.h3xstream.findsecbugs</groupId>
+              <artifactId>findsecbugs-plugin</artifactId>
+              <version>${findsecbugs.version}</version>
+            </plugin>
+          </plugins>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>io.spring.javaformat</groupId>
         <artifactId>spring-javaformat-maven-plugin</artifactId>
         <version>${spring-format.version}</version>
@@ -350,7 +383,12 @@
         <pluginManagement>
           <plugins>
             <!-- This plugin's configuration is used to store Eclipse m2e settings
-   only. It has no influence on the Maven build itself. -->
+	    only. It has no influence on the Maven build itself. -->
+            <plugin>
+              <groupId>org.codehaus.mojo</groupId>
+              <artifactId>findbugs-maven-plugin</artifactId>
+              <version>3.0.4</version>
+            </plugin>
             <plugin>
               <groupId>org.eclipse.m2e</groupId>
               <artifactId>lifecycle-mapping</artifactId>
@@ -406,5 +444,19 @@
       </build>
     </profile>
   </profiles>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <version>3.0.6-SNAPSHOT</version>
+        <configuration>
+          <xmlOutput>true</xmlOutput>
+          <!-- Optional directory to put findbugs xdoc xml report -->
+          <xmlOutputDirectory>target/findbugs</xmlOutputDirectory>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
 
 </project>

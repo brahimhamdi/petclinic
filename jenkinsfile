@@ -13,15 +13,20 @@ pipeline {
             steps {
                 script
                 {
-                    if (isUnix()) 
+                    if (isUnix())
                     {
-                        sh 'mvn -fn clean package checkstyle:checkstyle findbugs:findbugs pmd:pmd'
+                        sh 'mvn -fn clean package checkstyle:checkstyle pmd:pmd'
                     }
                     else
                     {
-                        bat 'mvn -fn clean package checkstyle:checkstyle findbugs:findbugs pmd:pmd'
+                        bat 'mvn -fn clean package checkstyle:checkstyle pmd:pmd'
                     }
-                 }
+                }
+            }
+        }
+        stage('QA checks') {
+            steps {
+                recordIssues(tools: [checkStyle(), pmdParser()])
             }
         }
     }

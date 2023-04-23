@@ -29,5 +29,45 @@ pipeline {
                 recordIssues(tools: [checkStyle(), pmdParser()])
             }
         }
+        stage('Rapports de Tests') {
+            steps {
+                script
+                {
+                    if (isUnix())
+                    {
+                        sh 'echo Rapports de tests'
+                    }
+                    else
+                    {
+                        bat 'echo Rapports de tests'
+                    }
+                }
+            }
+            post {
+                success {
+                    junit '**/target/surefire-reports/TEST-*.xml'
+                }
+            }
+        }
+        stage('Archivage artifacts') {
+            steps {
+                script
+                {
+                    if (isUnix())
+                    {
+                        sh 'echo Archivage des artifacts'
+                    }
+                    else
+                    {
+                        bat 'echo Archivage des artifacts'
+                    }
+                }
+            }
+            post {
+                success {
+                    archiveArtifacts 'target/*.jar'
+                }
+            }
+        }
     }
 }

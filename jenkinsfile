@@ -6,7 +6,15 @@ pipeline {
     stages {
         stage('GitClone') {
             steps {
-                git branch: 'main', url: 'https://github.com/brahimhamdi/petclinic'
+               // git branch: 'main', url: 'https://github.com/brahimhamdi/petclinic'
+                if (isUnix())
+                    {
+                        sh 'git clone https://github.com/brahimhamdi/petclinic /tmp/workspace/petclinic-pipe'
+                    }
+                    else
+                    {
+                        bat 'git clone https://github.com/brahimhamdi/petclinic /tmp/workspace/petclinic-pipe'
+                    }
             }
         }
         stage('Build') {

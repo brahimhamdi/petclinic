@@ -1,12 +1,15 @@
 pipeline {
     agent any
+    
     tools {
         maven "M3"
-    }
+        }
     stages {
         stage('GitClone') {
             steps {
-               // git branch: 'main', url: 'https://github.com/brahimhamdi/petclinic'
+                script
+                {
+                // git branch: 'main', url: 'https://github.com/brahimhamdi/petclinic'
                 if (isUnix())
                     {
                         sh 'git clone https://github.com/brahimhamdi/petclinic /tmp/workspace/petclinic-pipe'
@@ -15,29 +18,32 @@ pipeline {
                     {
                         bat 'git clone https://github.com/brahimhamdi/petclinic /tmp/workspace/petclinic-pipe'
                     }
+                }    
             }
         }
-        stage('Build') {
-            steps {
-                script
+    stage('Build') {
+        steps {
+            script
+            {
+                if (isUnix())
                 {
-                    if (isUnix())
-                    {
-                        sh 'mvn -fn clean package checkstyle:checkstyle pmd:pmd'
+                    sh 'mvn -fn clean package checkstyle:checkstyle pmd:pmd'
                     }
-                    else
-                    {
-                        bat 'mvn -fn clean package checkstyle:checkstyle pmd:pmd'
-                    }
+                else
+                {
+                    bat 'mvn -fn clean package checkstyle:checkstyle pmd:pmd'
                 }
             }
-        }
-        stage('QA checks') {
-            steps {
+        }}
+    stage('QA Check & publish') {
+        steps {
+            script
+            {
                 recordIssues(tools: [checkStyle(), pmdParser()])
             }
         }
-        stage('Rapports de Tests') {
+        }
+    stage('Rapports de Tests') {
             steps {
                 script
                 {
@@ -79,3 +85,4 @@ pipeline {
         }
     }
 }
+

@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent {
+            label 'Agent-node'
+        }
     
     tools {
         maven "M3"
@@ -82,6 +84,23 @@ pipeline {
                     archiveArtifacts 'target/*.jar'
                 }
             }
+        }
+        stage('deploy-petclinic') {
+            steps {
+                        script
+                {
+                    if (isUnix())
+                    {
+                        sh 'scp target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.205.30:/tmp/'
+                        sh 'ssh vagrant@192.168.205.30 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar'
+                    }
+                    else
+                    {
+                        bat 'scp target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.205.30:/tmp/'
+                        bat 'ssh vagrant@192.168.205.30 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar'
+                    }
+                }
+                }
         }
     }
 }

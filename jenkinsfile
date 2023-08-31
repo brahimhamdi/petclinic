@@ -1,6 +1,6 @@
 pipeline {
     agent {
-            label 'Agent-node'
+            label 'maven'
         }
     
     tools {
@@ -91,13 +91,13 @@ pipeline {
                 {
                     if (isUnix())
                     {
-                        sh 'scp target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.205.30:/tmp/'
-                        sh 'ssh vagrant@192.168.205.30 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar'
+                        sh 'scp target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.56.122:/tmp/'
+                        sh 'ssh vagrant@192.168.56.122 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar'
                     }
                     else
                     {
-                        bat 'scp target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.205.30:/tmp/'
-                        bat 'ssh vagrant@192.168.205.30 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar'
+                        bat 'scp target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.56.122:/tmp/'
+                        bat 'ssh vagrant@192.168.56.122 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar'
                     }
                 }
                 }

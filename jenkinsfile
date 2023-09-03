@@ -11,15 +11,8 @@ pipeline {
             steps {
                 script
                 {
-                // git branch: 'main', url: 'https://github.com/brahimhamdi/petclinic'
-                if (isUnix())
-                    {
-                        sh 'git clone https://github.com/brahimhamdi/petclinic /tmp/workspace/petclinic-pipe'
-                    }
-                    else
-                    {
-                        bat 'git clone https://github.com/brahimhamdi/petclinic /tmp/workspace/petclinic-pipe'
-                    }
+                    //sh 'kill -9 `ps aux |grep petclinic | grep jar | awk {\'print $2\'}`'
+                    git branch: 'main', url: 'https://github.com/brahimhamdi/petclinic'
                 }    
             }
         }
@@ -92,16 +85,40 @@ pipeline {
                     if (isUnix())
                     {
                         sh 'scp target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.56.122:/tmp/'
-                        sh 'ssh vagrant@192.168.56.122 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar'
+                        sh 'ssh vagrant@192.168.56.122 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar &'
+                        sh 'sleep 20'
                     }
                     else
                     {
                         bat 'scp target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.56.122:/tmp/'
-                        bat 'ssh vagrant@192.168.56.122 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar'
+                        bat 'ssh vagrant@192.168.56.122 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar &'
+                        sh 'sleep 20'
                     }
                 }
                 }
         }
+        stage('Test performance - Jmeter') {
+            steps {
+                script
+                {
+                    if (isUnix())
+                    {
+                        sh '/opt/apache-jmeter-5.6.2/bin/jmeter -j  jmeter.save.saveservice.output_format=xml -n -t petclinic_test_plan.jmx -l petclinic_test_plan.jtl'
+                    }
+                    else
+                    {
+                        bat '/opt/apache-jmeter-5.6.2/bin/jmeter -j  jmeter.save.saveservice.output_format=xml -n -t petclinic_test_plan.jmx -l petclinic_test_plan.jtl'
+                    }
+                }
+            }
+            post {
+                success {
+                    perfReport errorFailedThreshold: 5, errorUnstableThreshold: 1, sourceDataFiles: 'petclinic_test_plan.jtl'
+
+                }
+            }
+        }
     }
 }
+
 

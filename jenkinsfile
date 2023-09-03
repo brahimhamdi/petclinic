@@ -118,6 +118,20 @@ pipeline {
                 }
             }
         }
+        stage('Pub perf Test') {
+            steps {
+                script
+                {
+                    sh 'echo publier rapport de test performance ################################################'
+                 }
+            }
+            post {
+                success {
+                    perfReport errorFailedThreshold: 5, errorUnstableThreshold: 1, sourceDataFiles: 'petclinic_test_plan.jtl'
+
+                }
+            }
+        }
     }
 }
 

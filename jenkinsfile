@@ -21,7 +21,7 @@ pipeline {
             script
             {
                 if (isUnix())
-                {
+                {   sh 'rm -rf petclinic_test_plan.jtl'
                     sh 'mvn -fn clean package checkstyle:checkstyle pmd:pmd'
                     }
                 else
@@ -78,7 +78,7 @@ pipeline {
                 }
             }
         }
-        stage('deploy-petclinic') {
+        stage('deploy-petclinic-Test') {
             steps {
                         script
                 {
@@ -131,6 +131,23 @@ pipeline {
 
                 }
             }
+        }
+        stage('deploy-petclinic-Prod') {
+            steps {
+                        script
+                {
+                    if (isUnix())
+                    {
+                        sh 'scp target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.56.123:/tmp/'
+                        sh 'ssh vagrant@192.168.56.123 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar &'
+                    }
+                    else
+                    {
+                        bat 'scp target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.56.123:/tmp/'
+                        bat 'ssh vagrant@192.168.56.123 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar &'
+                    }
+                }
+                }
         }
     }
 }

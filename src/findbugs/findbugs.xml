@@ -1,0 +1,7 @@
+<property name="findbugs.home" value="tools/findbugs" />
+
+<taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" > 
+  <classpath>
+    <fileset dir="${findbugs.home}/lib" includes="**/*.jar"/>
+  </classpath>
+</taskdef>

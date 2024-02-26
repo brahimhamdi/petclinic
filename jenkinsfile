@@ -103,11 +103,11 @@ pipeline {
                 {
                     if (isUnix())
                     {
-                        sh '/opt/apache-jmeter-5.6.2/bin/jmeter -j  jmeter.save.saveservice.output_format=xml -n -t petclinic_test_plan.jmx -l petclinic_test_plan.jtl'
+                        sh '/opt/apache-jmeter-5.6.3/bin/jmeter -j  jmeter.save.saveservice.output_format=xml -n -t petclinic_test_plan.jmx -l petclinic_test_plan.jtl'
                     }
                     else
                     {
-                        bat '/opt/apache-jmeter-5.6.2/bin/jmeter -j  jmeter.save.saveservice.output_format=xml -n -t petclinic_test_plan.jmx -l petclinic_test_plan.jtl'
+                        bat '/opt/apache-jmeter-5.6.3/bin/jmeter -j  jmeter.save.saveservice.output_format=xml -n -t petclinic_test_plan.jmx -l petclinic_test_plan.jtl'
                     }
                 }
             }

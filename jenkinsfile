@@ -103,11 +103,15 @@ pipeline {
                 {
                     if (isUnix())
                     {
-                        sh '/opt/apache-jmeter-5.6.3/bin/jmeter -j  jmeter.save.saveservice.output_format=xml -n -t petclinic_test_plan.jmx -l petclinic_test_plan.jtl'
+                        sh 'scp petclinic_test_plan.jmx vagrant@192.168.56.122:/tmp/'
+                        sh 'ssh vagrant@192.168.56.122 "/opt/apache-jmeter-5.6.3/bin/jmeter -j jmeter.save.saveservice.output_format=xml -n -t /tmp/petclinic_test_plan.jmx -l /tmp/petclinic_test_plan.jtl"'
+                        sh 'scp vagrant@192.168.56.122:/tmp/petclinic_test_plan.jtl  .'
                     }
                     else
                     {
-                        bat '/opt/apache-jmeter-5.6.3/bin/jmeter -j  jmeter.save.saveservice.output_format=xml -n -t petclinic_test_plan.jmx -l petclinic_test_plan.jtl'
+                        bat 'scp petclinic_test_plan.jmx vagrant@192.168.56.122:/tmp/'
+                        bat 'ssh vagrant@192.168.56.122 "/opt/apache-jmeter-5.6.3/bin/jmeter -j jmeter.save.saveservice.output_format=xml -n -t /tmp/petclinic_test_plan.jmx -l /tmp/petclinic_test_plan.jtl"'
+                        bat 'scp vagrant@192.168.56.122:/tmp/petclinic_test_plan.jtl  .'
                     }
                 }
             }
@@ -135,7 +139,7 @@ pipeline {
         stage('deploy-petclinic-Prod') {
             steps {
                 script  {
-                    imeout(time: 10, unit: "MINUTES") {
+                    timeout(time: 30, unit: "MINUTES") {
 	                    input message: 'Voulez vous lancer le déploiement sur prod ?', ok: 'Yes'
 	                }
                     if (isUnix())

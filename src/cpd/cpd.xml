@@ -1,5 +1,0 @@
-<target name="cpd">
-  <cpd minimumTokenCount="100" format="xml" outputFile="/target/cpd.xml">
-    <fileset dir="src/main/java" includes="**/*.java"/> 
-  </cpd>
-</target>

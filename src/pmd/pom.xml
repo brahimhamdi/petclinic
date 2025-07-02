@@ -1,9 +1,0 @@
-<target name="pmd">
- <taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" 
-          classpathref="pmd.classpath"/>
-
- <pmd rulesetfiles="basic" shortFilenames="true">
-  <formatter type="xml" toFile="target/pmd.xml" />
-  <fileset dir="src/main/java" includes="**/*.java"/> 
- </pmd>
-</target>

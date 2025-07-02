@@ -1,75 +1,61 @@
 pipeline {
     agent {
-            label 'maven'
-        }
+        label 'maven'
+    }
     
     tools {
         maven "M3"
-        }
+    }
+
     stages {
-        stage('GitClone') {
+        stage('Git Clone Projet') {
             steps {
-                script
-                {
-                    //sh 'kill -9 `ps aux |grep petclinic | grep jar | awk {\'print $2\'}`'
-                    git branch: 'main', url: 'https://github.com/brahimhamdi/petclinic'
-                }    
+                git branch: 'main', url: 'https://github.com/brahimhamdi/petclinic'
             }
         }
-    stage('Build') {
-        steps {
-            script
-            {
-                if (isUnix())
-                {   sh 'rm -rf petclinic_test_plan.jtl'
-                    sh 'mvn -fn clean package checkstyle:checkstyle pmd:pmd'
+
+        stage('Build Projet') {
+            steps {
+                sh 'rm -rf petclinic_test_plan.jtl'
+                sh 'mvn -fn clean package'
+            }
+        }
+
+        stage('Analyse QA et Rapport de tests') {
+            parallel {
+                stage('Sonarqube QA') {
+                    steps {
+                        withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
+                            sh """
+                                mvn sonar:sonar \
+                                -Dsonar.projectKey=Petclinic-SpringBoot \
+                                -Dsonar.projectName='Petclinic-SpringBoot' \
+                                -Dsonar.host.url=http://192.168.56.120:9000/ \
+                                -Dsonar.login=${SONAR_TOKEN}
+                            """
+                        }
                     }
-                else
-                {
-                    bat 'mvn -fn clean package checkstyle:checkstyle pmd:pmd'
                 }
-            }
-        }}
-    stage('QA Check & publish') {
-        steps {
-            script
-            {
-                recordIssues(tools: [checkStyle(), pmdParser()])
-            }
-        }
-        }
-    stage('Rapports de Tests') {
-            steps {
-                script
-                {
-                    if (isUnix())
-                    {
-                        sh 'echo Rapports de tests'
+                
+                stage('Rapport Tests') {
+                    steps {
+                        script {
+                            sh 'echo Rapports de tests'
+                        }
                     }
-                    else
-                    {
-                        bat 'echo Rapports de tests'
+                    post {
+                        success {
+                            junit '**/target/surefire-reports/TEST-*.xml'
+                        }
                     }
                 }
             }
-            post {
-                success {
-                    junit '**/target/surefire-reports/TEST-*.xml'
-                }
-            }
         }
-        stage('Archivage artifacts') {
+
+        stage('Archivage artifacts jar') {
             steps {
-                script
-                {
-                    if (isUnix())
-                    {
-                        sh 'echo Archivage des artifacts'
-                    }
-                    else
-                    {
-                        bat 'echo Archivage des artifacts'
-                    }
+                script {
+                    sh 'echo Archivage des artifacts'
                 }
             }
             post {
@@ -78,83 +64,53 @@ pipeline {
                 }
             }
         }
-        stage('deploy-petclinic-Test') {
+
+        stage('Deploy Env Test') {
             steps {
-                        script
-                {
-                    if (isUnix())
-                    {
-                        sh 'scp target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.56.122:/tmp/'
-                        sh 'ssh vagrant@192.168.56.122 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar &'
-                        sh 'sleep 20'
-                    }
-                    else
-                    {
-                        bat 'scp target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.56.122:/tmp/'
-                        bat 'ssh vagrant@192.168.56.122 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar &'
-                        sh 'sleep 20'
-                    }
-                }
-                }
+                sh 'scp -o StrictHostKeyChecking=no target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.56.122:/tmp/'
+                sh 'ssh -o StrictHostKeyChecking=no vagrant@192.168.56.122 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar &'
+                sh 'sleep 20'
+            }
         }
-        stage('Test performance - Jmeter') {
+
+        stage('Test Performance - Jmeter') {
             steps {
-                script
-                {
-                    if (isUnix())
-                    {
-                        sh 'scp petclinic_test_plan.jmx vagrant@192.168.56.122:/tmp/'
-                        sh 'ssh vagrant@192.168.56.122 "/opt/apache-jmeter-5.6.3/bin/jmeter -j jmeter.save.saveservice.output_format=xml -n -t /tmp/petclinic_test_plan.jmx -l /tmp/petclinic_test_plan.jtl"'
-                        sh 'scp vagrant@192.168.56.122:/tmp/petclinic_test_plan.jtl  .'
-                    }
-                    else
-                    {
-                        bat 'scp petclinic_test_plan.jmx vagrant@192.168.56.122:/tmp/'
-                        bat 'ssh vagrant@192.168.56.122 "/opt/apache-jmeter-5.6.3/bin/jmeter -j jmeter.save.saveservice.output_format=xml -n -t /tmp/petclinic_test_plan.jmx -l /tmp/petclinic_test_plan.jtl"'
-                        bat 'scp vagrant@192.168.56.122:/tmp/petclinic_test_plan.jtl  .'
-                    }
+                script {
+                    sh 'scp -o StrictHostKeyChecking=no petclinic_test_plan.jmx vagrant@192.168.56.122:/tmp/'
+                    sh 'ssh -o StrictHostKeyChecking=no vagrant@192.168.56.122 "/opt/jmeter/bin/jmeter -j jmeter.save.saveservice.output_format=xml -n -t /tmp/petclinic_test_plan.jmx -l /tmp/petclinic_test_plan.jtl"'
+                    sh 'scp -o StrictHostKeyChecking=no vagrant@192.168.56.122:/tmp/petclinic_test_plan.jtl .'
                 }
             }
             post {
                 success {
                     perfReport errorFailedThreshold: 5, errorUnstableThreshold: 1, sourceDataFiles: 'petclinic_test_plan.jtl'
-
                 }
             }
         }
-        stage('Pub perf Test') {
+
+        stage('Publier Test Performance') {
             steps {
-                script
-                {
+                script {
                     sh 'echo publier rapport de test performance ################################################'
-                 }
+                }
             }
             post {
                 success {
                     perfReport errorFailedThreshold: 5, errorUnstableThreshold: 1, sourceDataFiles: 'petclinic_test_plan.jtl'
-
                 }
             }
         }
-        stage('deploy-petclinic-Prod') {
+
+        stage('Deploy Env Prod - Manual') {
             steps {
-                script  {
+                script {
                     timeout(time: 30, unit: "MINUTES") {
-	                    input message: 'Voulez vous lancer le déploiement sur prod ?', ok: 'Yes'
-	                }
-                    if (isUnix())
-                        {
-                        sh 'scp target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.56.123:/tmp/'
-                        sh 'ssh vagrant@192.168.56.123 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar &'
-                        }
-                    else
-                        {
-                        bat 'scp target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.56.123:/tmp/'
-                        bat 'ssh vagrant@192.168.56.123 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar &'
-                        }
+                        input message: 'Voulez vous lancer le déploiement sur prod ?', ok: 'Yes'
+                    }
+                    sh 'scp -o StrictHostKeyChecking=no target/spring-petclinic-3.0.0-SNAPSHOT.jar vagrant@192.168.56.123:/tmp/'
+                    sh 'ssh -o StrictHostKeyChecking=no vagrant@192.168.56.123 java -jar /tmp/spring-petclinic-3.0.0-SNAPSHOT.jar &'
                 }
-                }
+            }
         }
     }
 }
-

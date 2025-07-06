@@ -8,7 +8,7 @@ stages:
 variables:
   SONAR_URL: "http://192.168.56.121:9000"
   SONAR_PROJECT_KEY: "Petclinic-SpringBoot"
-  APP_JAR: "target/spring-petclinic-3.0.0-SNAPSHOT.jar"
+  APP_JAR: "spring-petclinic-3.0.0-SNAPSHOT.jar"
 
 # Cache pour accélérer les builds suivants
 cache:
@@ -57,8 +57,8 @@ deploy-test:
   stage: deploy-env-test
   script:
     - echo $SSH_PASS - $APP_JAR
-    - sshpass -p '$SSH_PASS' scp -v -o StrictHostKeyChecking=no $APP_JAR vagrant@192.168.56.122:/tmp/
-    - sshpass -p '$SSH_PASS' ssh -v -o StrictHostKeyChecking=no vagrant@192.168.56.122 "nohup java -jar /tmp/$APP_JAR > /dev/null 2>&1 &"
+    - sshpass -p "$SSH_PASS" scp -v -o StrictHostKeyChecking=no target/$APP_JAR vagrant@192.168.56.122:/tmp/
+    - sshpass -p "$SSH_PASS" ssh -v -o StrictHostKeyChecking=no vagrant@192.168.56.122 "nohup java -jar /tmp/$APP_JAR > /dev/null 2>&1 &"
     - sleep 20
   environment:
     name: test
@@ -67,9 +67,9 @@ deploy-test:
 performance-test:
   stage: performance-test
   script:
-    - sshpass -p '$SSH_PASS' scp -o StrictHostKeyChecking=no petclinic_test_plan.jmx vagrant@192.168.56.122:/tmp/
-    - sshpass -p '$SSH_PASS' ssh -o StrictHostKeyChecking=no vagrant@192.168.56.122 "/opt/jmeter/bin/jmeter -j jmeter.save.saveservice.output_format=xml -n -t /tmp/petclinic_test_plan.jmx -l /tmp/petclinic_test_plan.jtl"
-    - sshpass -p '$SSH_PASS' scp -o StrictHostKeyChecking=no vagrant@192.168.56.122:/tmp/petclinic_test_plan.jtl .
+    - sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no petclinic_test_plan.jmx vagrant@192.168.56.122:/tmp/
+    - sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no vagrant@192.168.56.122 "/opt/jmeter/bin/jmeter -j jmeter.save.saveservice.output_format=xml -n -t /tmp/petclinic_test_plan.jmx -l /tmp/petclinic_test_plan.jtl"
+    - sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no vagrant@192.168.56.122:/tmp/petclinic_test_plan.jtl .
   artifacts:
     paths:
       - petclinic_test_plan.jtl
@@ -80,8 +80,9 @@ deploy-prod:
   stage: deploy-env-prod
   when: manual
   script:
-    - sshpass -p '$SSH_PASS' scp -o StrictHostKeyChecking=no $APP_JAR vagrant@192.168.56.123:/tmp/
-    - sshpass -p '$SSH_PASS' ssh -o StrictHostKeyChecking=no vagrant@192.168.56.123 "nohup java -jar /tmp/$APP_JAR > /dev/null 2>&1 &"
+    - sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no target/$APP_JAR vagrant@192.168.56.123:/tmp/
+    - sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no vagrant@192.168.56.123 "nohup java -jar /tmp/$APP_JAR > /dev/null 2>&1 &"
   environment:
     name: production
     url: http://192.168.56.123:8080
+

@@ -9,8 +9,10 @@ variables:
   SONAR_URL: "http://192.168.56.121:9000"
   SONAR_PROJECT_KEY: "Petclinic-SpringBoot"
   APP_JAR: "spring-petclinic-3.0.0-SNAPSHOT.jar"
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+  COVERAGE_REGEX: 'Total.*?([0-9]{1,3})%'
 
-# Cache pour accélérer les builds suivants
 cache:
   key: "$CI_COMMIT_REF_SLUG"
   paths:
@@ -19,17 +21,16 @@ cache:
 
 before_script:
   - sudo apt update -y
-  - sudo apt install -y openssh-client
+  - sudo apt install -y openssh-client jq
 
 build:
   stage: build
   script:
-    - mvn package
+    - mvn $MAVEN_CLI_OPTS clean package
   artifacts:
     paths:
-      - $APP_JAR
+      - target/$APP_JAR
     expire_in: 1 week
-  # Exécuter seulement si des fichiers Java ou pom.xml sont modifiés
   rules:
     - changes:
         - "**/*.java"
@@ -39,43 +40,86 @@ build:
 quality-analysis:
   stage: analyses_QA_rapport_tests
   script:
-    - mvn sonar:sonar
+    - mvn $MAVEN_CLI_OPTS sonar:sonar
       -Dsonar.projectKey=$SONAR_PROJECT_KEY
       -Dsonar.projectName='Petclinic-SpringBoot'
       -Dsonar.host.url=$SONAR_URL
       -Dsonar.login=$SONAR_TOKEN
-
-test-reports:
-  stage: analyses_QA_rapport_tests
-  script:
-    - mvn test
   artifacts:
     reports:
-      junit: "**/target/surefire-reports/TEST-*.xml"
+      codequality: "target/sonar/report-task.txt"
+    expire_in: 1 week
+
+unit-tests:
+  stage: analyses_QA_rapport_tests
+  script:
+    - mvn $MAVEN_CLI_OPTS test
+  artifacts:
+    reports:
+      junit: "target/surefire-reports/TEST-*.xml"
+    paths:
+      - target/surefire-reports/
+      - target/site/jacoco/
+    expire_in: 1 week
+  coverage: '/${COVERAGE_REGEX}/'
+
+coverage-report:
+  stage: analyses_QA_rapport_tests
+  script:
+    - mvn $MAVEN_CLI_OPTS jacoco:report
+  artifacts:
+    paths:
+      - target/site/jacoco/jacoco.xml
+      - target/site/jacoco/index.html
+    expire_in: 1 week
 
 deploy-test:
   stage: deploy-env-test
   script:
-    - echo $SSH_PASS - $APP_JAR
-    - sshpass -p "$SSH_PASS" scp -v -o StrictHostKeyChecking=no target/$APP_JAR vagrant@192.168.56.122:/tmp/
-    - sshpass -p "$SSH_PASS" ssh -v -o StrictHostKeyChecking=no vagrant@192.168.56.122 "nohup java -jar /tmp/$APP_JAR > /dev/null 2>&1 &"
+    - sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no target/$APP_JAR vagrant@192.168.56.122:/tmp/
+    - sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no vagrant@192.168.56.122 "nohup java -jar /tmp/$APP_JAR > /dev/null 2>&1 &"
     - sleep 20
   environment:
     name: test
     url: http://192.168.56.122:8080
-  
+
 performance-test:
   stage: performance-test
   script:
     - sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no petclinic_test_plan.jmx vagrant@192.168.56.122:/tmp/
     - sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no vagrant@192.168.56.122 "/opt/jmeter/bin/jmeter -j jmeter.save.saveservice.output_format=xml -n -t /tmp/petclinic_test_plan.jmx -l /tmp/petclinic_test_plan.jtl"
     - sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no vagrant@192.168.56.122:/tmp/petclinic_test_plan.jtl .
+    # Conversion robuste JTL vers JUnit XML
+    - |
+      if [ -f "petclinic_test_plan.jtl" ]; then
+        echo '<?xml version="1.0" encoding="UTF-8"?>' > jmeter-report.xml
+        echo '<testsuite>' >> jmeter-report.xml
+        
+        while IFS= read -r line; do
+          if [[ "$line" == *"lb=\""* ]]; then
+            label=$(echo "$line" | grep -o 'lb="[^"]*"' | cut -d'"' -f2)
+            time=$(echo "$line" | grep -o 't="[^"]*"' | cut -d'"' -f2)
+            rc=$(echo "$line" | grep -o 'rc="[^"]*"' | cut -d'"' -f2)
+            rm=$(echo "$line" | grep -o 'rm="[^"]*"' | cut -d'"' -f2)
+            
+            echo "<testcase name=\"$label\" time=\"$time\">" >> jmeter-report.xml
+            [ -n "$rc" ] && echo "<system-out>Response Code: $rc</system-out>" >> jmeter-report.xml
+            [ -n "$rm" ] && echo "<system-err>$rm</system-err>" >> jmeter-report.xml
+            echo "</testcase>" >> jmeter-report.xml
+          fi
+        done < "petclinic_test_plan.jtl"
+        
+        echo '</testsuite>' >> jmeter-report.xml
+      fi
   artifacts:
+    reports:
+      junit: "jmeter-report.xml"
+      performance: "petclinic_test_plan.jtl"
     paths:
       - petclinic_test_plan.jtl
-    reports:
-      junit: "petclinic_test_plan.jtl"
-  
+      - jmeter-report.xml
+    expire_in: 1 week
+
 deploy-prod:
   stage: deploy-env-prod
   when: manual

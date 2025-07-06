@@ -3,7 +3,6 @@ stages:
   - analyses_QA_rapport_tests
   - deploy-env-test
   - performance-test
-  - publier-result-tests
   - deploy-env-prod
 
 variables:
@@ -57,7 +56,7 @@ test-reports:
 deploy-test:
   stage: deploy-env-test
   script:
-    - echo $APP_JAR
+    - echo $SSH_PASS - $APP_JAR
     - sshpass -p '$SSH_PASS' scp -v -o StrictHostKeyChecking=no $APP_JAR vagrant@192.168.56.122:/tmp/
     - sshpass -p '$SSH_PASS' ssh -v -o StrictHostKeyChecking=no vagrant@192.168.56.122 "nohup java -jar /tmp/$APP_JAR > /dev/null 2>&1 &"
     - sleep 20
@@ -76,11 +75,6 @@ performance-test:
       - petclinic_test_plan.jtl
     reports:
       junit: "petclinic_test_plan.jtl"
-  
-publish-results:
-  stage: publier-result-tests
-  script:
-    - echo "Publication des résultats des tests"
   
 deploy-prod:
   stage: deploy-env-prod

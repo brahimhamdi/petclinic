@@ -41,11 +41,11 @@
         <stringProp name="ThreadGroup.duration"></stringProp>
         <stringProp name="ThreadGroup.delay"></stringProp>
         <boolProp name="ThreadGroup.delayedStart">true</boolProp>
-        <stringProp name="TestPlan.comments">Original : 50 - 10 - 10</stringProp>
+        <stringProp name="TestPlan.comments">Original : 30 - 5 - 5</stringProp>
       </ThreadGroup>
       <hashTree>
         <ConstantTimer guiclass="ConstantTimerGui" testclass="ConstantTimer" testname="Fixed time counter" enabled="true">
-          <stringProp name="ConstantTimer.delay">300</stringProp>
+          <stringProp name="ConstantTimer.delay">100</stringProp>
         </ConstantTimer>
         <hashTree/>
         <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="Default HTTP parameters" enabled="true">
